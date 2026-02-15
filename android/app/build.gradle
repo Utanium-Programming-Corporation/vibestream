@@ -1,0 +1,82 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def hasReleaseSigning = keystorePropertiesFile.exists() &&
+        keystoreProperties['keyAlias'] &&
+        keystoreProperties['keyPassword'] &&
+        keystoreProperties['storeFile'] &&
+        keystoreProperties['storePassword']
+
+android {
+    namespace = "com.vsapps.discovery"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.vsapps.discovery"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            if (!hasReleaseSigning) {
+                throw new GradleException(
+                        "Missing Android release signing configuration.\n" +
+                                "Expected android/key.properties with: storeFile, storePassword, keyAlias, keyPassword.\n" +
+                                "Also ensure the referenced keystore file exists in the android/ directory.\n" +
+                                "Without this, 'flutter build appbundle' (AAB) cannot be produced for Google Play."
+                )
+            }
+
+            signingConfig = signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    // Google Play Billing Library (required by Play Console for in-app products/subscriptions).
+    // Keep this at v6.0.1+ (we use v7.x to stay ahead of deprecations).
+    def billing_version = "7.0.0"
+    implementation "com.android.billingclient:billing:$billing_version"
+}
+
+flutter {
+    source = "../.."
+}
